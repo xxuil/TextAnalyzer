@@ -1,3 +1,9 @@
+/* EE 360P HW4
+ * Name: Xiangxing Liu
+ * EID: xl5587
+ * Name: Kravis Cho
+ * EID: kyc375
+ */
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
