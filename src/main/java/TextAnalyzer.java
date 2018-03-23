@@ -76,15 +76,15 @@ public class TextAnalyzer extends Configured implements Tool {
 
         // Setup MapReduce job
         job.setMapperClass(TextMapper.class);
-        //   Uncomment the following line if you want to use Combiner class
+        // Uncomment the following line if you want to use Combiner class
         // job.setCombinerClass(TextCombiner.class);
         job.setReducerClass(TextReducer.class);
 
         // Specify key / value types (Don't change them for the purpose of this assignment)
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        //   If your mapper and combiner's  output types are different from Text.class,
-        //   then uncomment the following lines to specify the data types.
+        // If your mapper and combiner's  output types are different from Text.class,
+        // then uncomment the following lines to specify the data types.
         //job.setMapOutputKeyClass(?.class);
         //job.setMapOutputValueClass(?.class);
 
