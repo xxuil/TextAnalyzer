@@ -17,6 +17,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
 
 // Do not change the signature of this class
 public class TextAnalyzer extends Configured implements Tool {
@@ -46,12 +48,13 @@ public class TextAnalyzer extends Configured implements Tool {
     // key / value types of your mapper function
     public static class TextReducer extends Reducer<?, ?, Text, Text> {
         private final static Text emptyText = new Text("");
+        private Text queryWordText = new Text();
 
         public void reduce(Text key, Iterable<Tuple> queryTuples, Context context)
                 throws IOException, InterruptedException
         {
             // Implementation of you reducer function
-
+            Map<String, Integer> map = new TreeMap<String, Integer>();
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
             //   Write out the current context key
@@ -106,9 +109,9 @@ public class TextAnalyzer extends Configured implements Tool {
         System.exit(res);
     }
 
-    // You may define sub-classes here. Example:
-    // public static class MyClass {
-    //
-    // }
+    /* Subclass Tuple */
+    class Tuple{
+
+    }
 }
 
