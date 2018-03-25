@@ -29,16 +29,17 @@ public class TextAnalyzer extends Configured implements Tool {
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException
         {
-            String line = value.toString();
+            /*String line = value.toString();
             line = line.toLowerCase();
             line = line.replaceAll("[^A-Za-z0-9]", "\\s");
             StringTokenizer token = new StringTokenizer(line);
             IntWritable integ = new IntWritable(1);
             Text temp = new Text();
             while(token.hasMoreTokens()){
-                temp.set(token.nextToken());
-                context.write(temp, new Tuple(integ));
-            }
+                String word = token.nextToken();
+                temp.set(word);
+                context.write(temp, new Tuple(temp, integ));
+            }*/
             // Implementation of you mapper function
         }
     }
@@ -49,6 +50,22 @@ public class TextAnalyzer extends Configured implements Tool {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
                 throws IOException, InterruptedException
         {
+            Set<Text> visited = new HashSet<Text>();
+            Iterator<Tuple> tup = tuples.iterator();
+            Map<Text, Integer> map = new HashMap<Text, Integer>();
+            while(tup.hasNext()){
+                Tuple test = tup.next();
+                if (!visited.add(test.word)) {
+                    map.put(test.word, 1);
+                }else{
+                    Integer val = map.get(test.word);
+                    map.put(test.word, val+1);
+                }
+            }
+            Set<Text> i = map.keySet();
+            for(Text k : i){
+                context.write(k, new Tuple(k, new IntWritable(map.get(k))));
+            }
             // Implementation of you combiner function
         }
     }
@@ -64,6 +81,13 @@ public class TextAnalyzer extends Configured implements Tool {
         {
             // Implementation of you reducer function
             Map<String, Integer> map = new TreeMap<String, Integer>();
+            Iterator<Tuple> tup = queryTuples.iterator();
+            while(tup.hasNext()){
+                Tuple temp = tup.next();
+                if(!temp.word.equals(key)){
+                    map.put(temp.word.toString(), Integer.parseInt(temp.count.toString()));
+                }
+            }
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
             //   Write out the current context key
@@ -123,7 +147,8 @@ public class TextAnalyzer extends Configured implements Tool {
         private Text word;
         private IntWritable count;
 
-        public Tuple(IntWritable count){
+        public Tuple(Text word, IntWritable count){
+            this.word = word;
             this.count = count;
         }
         public void write(DataOutput dataOutput) {
