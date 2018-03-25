@@ -27,7 +27,7 @@ public class TextAnalyzer extends Configured implements Tool {
     //     <Input Key Type, Input Value Type, Output Key Type, Output Value Type>
     public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
 
-        private final static IntWritable one = new IntWritable(1);
+        //private final IntWritable one = new IntWritable(1);
 
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException
@@ -48,11 +48,11 @@ public class TextAnalyzer extends Configured implements Tool {
                 String tmp = wordList.get(i);
                 if(!wordSet.contains(tmp)) {
                     wordSet.add(tmp);
-
+                    Tuple t;
                     for (int j = 0; j < wordList.size(); j++) {
                         if (i != j) {
                             String count = wordList.get(j);
-                            Tuple t = new Tuple(count, one);
+                            t = new Tuple(count, 1);
                             context.write(new Text(tmp), t);
                         }
                     }
@@ -67,25 +67,20 @@ public class TextAnalyzer extends Configured implements Tool {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
                 throws IOException, InterruptedException
         {
-            Set<Text> visited = new HashSet<Text>();
             Iterator<Tuple> tup = tuples.iterator();
-            Map<Text, Integer> map = new HashMap<Text, Integer>();
+            Map<String, Integer> map = new HashMap<String, Integer>();
             while(tup.hasNext()){
                 Tuple test = tup.next();
-                if (!visited.add(test.word)) {
-                    map.put(test.word, 1);
+                String tmp = test.getWord();
+                if (map.containsKey(tmp)) {
+                    map.put(tmp, test.getCount() + map.get(tmp));
                 }else{
-                    Integer val = map.get(test.word);
-                    map.put(test.word, val+1);
+                    map.put(tmp, test.getCount());
                 }
             }
-            Set<Text> i = map.keySet();
-            for(Text k : i){
-                context.write(k, new Tuple(k, new IntWritable(map.get(k))));
-            }
-            // Implementation of you combiner function
-            for(Tuple t : tuples){
-
+            Set<String> i = map.keySet();
+            for(String k : i){
+                context.write(key, new Tuple(k, map.get(k)));
             }
         }
     }
@@ -104,8 +99,11 @@ public class TextAnalyzer extends Configured implements Tool {
             Iterator<Tuple> tup = queryTuples.iterator();
             while(tup.hasNext()){
                 Tuple temp = tup.next();
-                if(!temp.word.equals(key)){
-                    map.put(temp.word.toString(), Integer.parseInt(temp.count.toString()));
+                String tmp = temp.getWord();
+                if(map.containsKey(tmp)){
+                    map.put(tmp, temp.getCount() + map.get(tmp));
+                } else {
+                    map.put(tmp, temp.getCount());
                 }
             }
             // Write out the results; you may change the following example
@@ -163,29 +161,51 @@ public class TextAnalyzer extends Configured implements Tool {
     }
 
     /* Subclass Tuple */
-    static class Tuple implements WritableComparable<Tuple>{
+    public static class Tuple implements WritableComparable<Tuple>{
         private Text word;
         private IntWritable count;
+
+        public Tuple(){
+            this.word = new Text();
+            this.count = new IntWritable();
+        }
 
         public Tuple(Text word, IntWritable count){
             this.word = word;
             this.count = count;
         }
 
-        public Tuple(String str, IntWritable count){
+        public Tuple(String str, int i){
             this.word = new Text(str);
-            this.count = count;
-        }
-        public void write(DataOutput dataOutput) {
-
+            this.count = new IntWritable(i);
         }
 
-        public void readFields(DataInput dataInput) {
+        public String getWord(){
+            return this.word.toString();
+        }
 
+        public int getCount(){
+            return this.count.get();
+        }
+
+        public void write(DataOutput dataOutput) throws IOException {
+            word.write(dataOutput);
+            count.write(dataOutput);
+        }
+
+        public void readFields(DataInput dataInput) throws IOException {
+            word.readFields(dataInput);
+            count.readFields(dataInput);
         }
 
         public int compareTo(Tuple o) {
-            return 0;
+            int ret = word.compareTo(o.word);
+
+            if (ret != 0) {
+                return ret;
+            }
+
+            return count.compareTo(o.count);
         }
     }
 }
