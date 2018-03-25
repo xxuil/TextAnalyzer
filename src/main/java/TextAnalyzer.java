@@ -26,21 +26,38 @@ public class TextAnalyzer extends Configured implements Tool {
     // The four template data types are:
     //     <Input Key Type, Input Value Type, Output Key Type, Output Value Type>
     public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
+
+        private final static IntWritable one = new IntWritable(1);
+
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException
         {
-            /*String line = value.toString();
+            String line = value.toString();
             line = line.toLowerCase();
-            line = line.replaceAll("[^A-Za-z0-9]", "\\s");
+            line = line.replaceAll("[^A-Za-z0-9]", " ");
             StringTokenizer token = new StringTokenizer(line);
-            IntWritable integ = new IntWritable(1);
-            Text temp = new Text();
+            ArrayList<String> wordList = new ArrayList<String>();
+
             while(token.hasMoreTokens()){
-                String word = token.nextToken();
-                temp.set(word);
-                context.write(temp, new Tuple(temp, integ));
-            }*/
-            // Implementation of you mapper function
+                String temp = token.nextToken();
+                wordList.add(temp);
+            }
+
+            Set<String> wordSet = new HashSet<String>();
+            for(int i = 0; i < wordList.size(); i++){
+                String tmp = wordList.get(i);
+                if(!wordSet.contains(tmp)) {
+                    wordSet.add(tmp);
+
+                    for (int j = 0; j < wordList.size(); j++) {
+                        if (i != j) {
+                            String count = wordList.get(j);
+                            Tuple t = new Tuple(count, one);
+                            context.write(new Text(tmp), t);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -67,6 +84,9 @@ public class TextAnalyzer extends Configured implements Tool {
                 context.write(k, new Tuple(k, new IntWritable(map.get(k))));
             }
             // Implementation of you combiner function
+            for(Tuple t : tuples){
+
+            }
         }
     }
 
@@ -149,6 +169,11 @@ public class TextAnalyzer extends Configured implements Tool {
 
         public Tuple(Text word, IntWritable count){
             this.word = word;
+            this.count = count;
+        }
+
+        public Tuple(String str, IntWritable count){
+            this.word = new Text(str);
             this.count = count;
         }
         public void write(DataOutput dataOutput) {
