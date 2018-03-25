@@ -29,6 +29,16 @@ public class TextAnalyzer extends Configured implements Tool {
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException
         {
+            String line = value.toString();
+            line = line.toLowerCase();
+            line = line.replaceAll("[^A-Za-z0-9]", "\\s");
+            StringTokenizer token = new StringTokenizer(line);
+            IntWritable integ = new IntWritable(1);
+            Text temp = new Text();
+            while(token.hasMoreTokens()){
+                temp.set(token.nextToken());
+                context.write(temp, new Tuple(integ));
+            }
             // Implementation of you mapper function
         }
     }
@@ -109,10 +119,13 @@ public class TextAnalyzer extends Configured implements Tool {
     }
 
     /* Subclass Tuple */
-    class Tuple implements WritableComparable<Tuple>{
+    static class Tuple implements WritableComparable<Tuple>{
         private Text word;
         private IntWritable count;
 
+        public Tuple(IntWritable count){
+            this.count = count;
+        }
         public void write(DataOutput dataOutput) {
 
         }
