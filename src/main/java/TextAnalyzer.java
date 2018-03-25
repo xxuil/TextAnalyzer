@@ -16,9 +16,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.TreeMap;
+import java.io.*;
+import java.util.*;
 
 // Do not change the signature of this class
 public class TextAnalyzer extends Configured implements Tool {
@@ -26,7 +25,7 @@ public class TextAnalyzer extends Configured implements Tool {
     // Replace "?" with your own output key / value types
     // The four template data types are:
     //     <Input Key Type, Input Value Type, Output Key Type, Output Value Type>
-    public static class TextMapper extends Mapper<LongWritable, Text, ?, ?> {
+    public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
         public void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException
         {
@@ -36,7 +35,7 @@ public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own key / value types
     // NOTE: combiner's output key / value types have to be the same as those of mapper
-    public static class TextCombiner extends Reducer<?, ?, ?, ?> {
+    public static class TextCombiner extends Reducer<Text, Tuple, Text, Tuple> {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
                 throws IOException, InterruptedException
         {
@@ -46,7 +45,7 @@ public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own input key / value types, i.e., the output
     // key / value types of your mapper function
-    public static class TextReducer extends Reducer<?, ?, Text, Text> {
+    public static class TextReducer extends Reducer<Text, Tuple, Text, Text> {
         private final static Text emptyText = new Text("");
         private Text queryWordText = new Text();
 
@@ -74,13 +73,13 @@ public class TextAnalyzer extends Configured implements Tool {
         Configuration conf = this.getConf();
 
         // Create job
-        Job job = new Job(conf, "EID1_EID2"); // Replace with your EIDs
+        Job job = new Job(conf, "xl5587_kyc375"); // Replace with your EIDs
         job.setJarByClass(TextAnalyzer.class);
 
         // Setup MapReduce job
         job.setMapperClass(TextMapper.class);
         // Uncomment the following line if you want to use Combiner class
-        // job.setCombinerClass(TextCombiner.class);
+        job.setCombinerClass(TextCombiner.class);
         job.setReducerClass(TextReducer.class);
 
         // Specify key / value types (Don't change them for the purpose of this assignment)
@@ -88,8 +87,8 @@ public class TextAnalyzer extends Configured implements Tool {
         job.setOutputValueClass(Text.class);
         // If your mapper and combiner's  output types are different from Text.class,
         // then uncomment the following lines to specify the data types.
-        //job.setMapOutputKeyClass(?.class);
-        //job.setMapOutputValueClass(?.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Tuple.class);
 
         // Input
         FileInputFormat.addInputPath(job, new Path(args[0]));
@@ -110,8 +109,21 @@ public class TextAnalyzer extends Configured implements Tool {
     }
 
     /* Subclass Tuple */
-    class Tuple{
+    class Tuple implements WritableComparable<Tuple>{
+        private Text word;
+        private IntWritable count;
 
+        public void write(DataOutput dataOutput) {
+
+        }
+
+        public void readFields(DataInput dataInput) {
+
+        }
+
+        public int compareTo(Tuple o) {
+            return 0;
+        }
     }
 }
 
