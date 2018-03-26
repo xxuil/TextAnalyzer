@@ -21,6 +21,12 @@ import java.util.*;
 
 // Do not change the signature of this class
 public class TextAnalyzer extends Configured implements Tool {
+    private static int wordCount = 0;
+    private static int tCount = 0;
+    private static int combineKey = 0;
+    private static int combineWrite = 0;
+    private static int reduceKey = 0;
+    private static int reduceOut = 0;
 
     // Replace "?" with your own output key / value types
     // The four template data types are:
@@ -44,6 +50,8 @@ public class TextAnalyzer extends Configured implements Tool {
             }
 
             Set<String> wordSet = new HashSet<String>();
+            ArrayList<Map<String, Tuple>> tList = new ArrayList<Map<String, Tuple>>();
+
             for(int i = 0; i < wordList.size(); i++){
                 String tmp = wordList.get(i);
                 if(!wordSet.contains(tmp)) {
@@ -54,10 +62,20 @@ public class TextAnalyzer extends Configured implements Tool {
                             String count = wordList.get(j);
                             t = new Tuple(count, 1);
                             context.write(new Text(tmp), t);
+
+                            /* debug code */
+                            Map<String, Tuple> tMap = new HashMap<String, Tuple>();
+                            tMap.put(tmp, t);
+                            tList.add(tMap);
                         }
                     }
                 }
             }
+
+            /* debug code */
+            wordCount = wordCount + wordSet.size();
+            tCount = tCount + tList.size();
+
         }
     }
 
@@ -67,6 +85,7 @@ public class TextAnalyzer extends Configured implements Tool {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
                 throws IOException, InterruptedException
         {
+            combineKey ++;
             Iterator<Tuple> tup = tuples.iterator();
             Map<String, Integer> map = new HashMap<String, Integer>();
             while(tup.hasNext()){
@@ -80,6 +99,7 @@ public class TextAnalyzer extends Configured implements Tool {
             }
             Set<String> i = map.keySet();
             for(String k : i){
+                combineWrite ++;
                 context.write(key, new Tuple(k, map.get(k)));
             }
         }
@@ -94,27 +114,61 @@ public class TextAnalyzer extends Configured implements Tool {
         public void reduce(Text key, Iterable<Tuple> queryTuples, Context context)
                 throws IOException, InterruptedException
         {
-            // Implementation of you reducer function
+            reduceKey++;
+
+            int max = 0;
             Map<String, Integer> map = new TreeMap<String, Integer>();
             Iterator<Tuple> tup = queryTuples.iterator();
+
             while(tup.hasNext()){
                 Tuple temp = tup.next();
                 String tmp = temp.getWord();
+                int count;
                 if(map.containsKey(tmp)){
+                    count = temp.getCount() + map.get(tmp);
                     map.put(tmp, temp.getCount() + map.get(tmp));
                 } else {
+                    count = temp.getCount();
                     map.put(tmp, temp.getCount());
                 }
+
+                if(count > max){
+                    max = count;
+                }
             }
+
+            String str = key.toString();
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
             //   Write out the current context key
+            String keyString = key.toString();
+            keyString = keyString + " " + Integer.toString(max);
+            key.set(keyString);
             context.write(key, emptyText);
             //   Write out query words and their count
             for(String queryWord: map.keySet()){
+                reduceOut++;
                 String count = map.get(queryWord).toString() + ">";
                 queryWordText.set("<" + queryWord + ",");
                 context.write(queryWordText, new Text(count));
+
+                /* debug */
+                if(str.equals("binley")){
+                    if(queryWord.equals("darcy")){
+                        if(!(map.get(queryWord) == 112)){
+                            System.out.println("wrong d");
+                        }
+                    }
+                }
+
+                if(str.equals("jane")){
+                    if(queryWord.equals("elizabeth")){
+                        if(!(map.get(queryWord) == 135)){
+                            System.out.println("wrong e");
+                        }
+                    }
+                }
+                /* debug */
             }
             //   Empty line for ending the current context key
             context.write(emptyText, emptyText);
@@ -157,6 +211,10 @@ public class TextAnalyzer extends Configured implements Tool {
     // Do not modify the main method
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(new Configuration(), new TextAnalyzer(), args);
+
+        /* debug code */
+        System.out.println(wordCount + " " + tCount + " " + combineKey + " " + combineWrite + " " + reduceKey + " " + reduceOut);
+
         System.exit(res);
     }
 
