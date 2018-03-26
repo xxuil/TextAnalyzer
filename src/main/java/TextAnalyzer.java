@@ -17,6 +17,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 // Do not change the signature of this class
@@ -132,7 +133,7 @@ public class TextAnalyzer extends Configured implements Tool {
                     map.put(tmp, temp.getCount());
                 }
 
-                if(count > max){
+                if(count >= max){
                     max = count;
                 }
             }
@@ -140,13 +141,32 @@ public class TextAnalyzer extends Configured implements Tool {
             String str = key.toString();
             // Write out the results; you may change the following example
             // code to fit with your reducer function.
-            //   Write out the current context key
+            // Write out the current context key
             String keyString = key.toString();
             keyString = keyString + " " + Integer.toString(max);
             key.set(keyString);
             context.write(key, emptyText);
-            //   Write out query words and their count
-            for(String queryWord: map.keySet()){
+
+
+            Set<String> maxSet = new TreeSet<String>();
+            for(String q: map.keySet()) {
+                if(max == map.get(q)){
+                    maxSet.add(q);
+                }
+            }
+
+            Set<String> qSet = new TreeSet<String>(map.keySet());
+            qSet.removeAll(maxSet);
+
+            for(String queryWord: maxSet) {
+                reduceOut++;
+                String count = map.get(queryWord).toString() + ">";
+                queryWordText.set("<" + queryWord + ",");
+                context.write(queryWordText, new Text(count));
+            }
+
+            // Write out query words and their count
+            for(String queryWord: qSet){
                 reduceOut++;
                 String count = map.get(queryWord).toString() + ">";
                 queryWordText.set("<" + queryWord + ",");
@@ -170,7 +190,7 @@ public class TextAnalyzer extends Configured implements Tool {
                 }
                 /* debug */
             }
-            //   Empty line for ending the current context key
+            // Empty line for ending the current context key
             context.write(emptyText, emptyText);
         }
     }
@@ -213,7 +233,7 @@ public class TextAnalyzer extends Configured implements Tool {
         int res = ToolRunner.run(new Configuration(), new TextAnalyzer(), args);
 
         /* debug code */
-        System.out.println(wordCount + " " + tCount + " " + combineKey + " " + combineWrite + " " + reduceKey + " " + reduceOut);
+        //System.out.println(wordCount + " " + tCount + " " + combineKey + " " + combineWrite + " " + reduceKey + " " + reduceOut);
 
         System.exit(res);
     }
